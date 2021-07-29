@@ -1,5 +1,6 @@
 package org.techtown.myapplication;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,6 +26,10 @@ public class ThreadActivity extends AppCompatActivity {
     Handler loopHandler = new Handler();
 
     ProcessThread prThread;
+
+    BackgroundTask task;
+    int asyncValue = 0;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +82,29 @@ public class ThreadActivity extends AppCompatActivity {
         });
 
         prThread = new ProcessThread();
+
+        progressBar = findViewById(R.id.progressBar);
+
+        Button asyncTaskStartBtn =findViewById(R.id.button5);
+
+
+        asyncTaskStartBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                task = new BackgroundTask();
+                task.execute();
+            }
+        });
+
+        Button asyncTaskStopBtn =findViewById(R.id.button6);
+        asyncTaskStopBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                task.cancel(true);
+            }
+        });
+
+
 
     }
 
@@ -179,7 +208,37 @@ public class ThreadActivity extends AppCompatActivity {
         }
     }
 
+    class BackgroundTask extends AsyncTask<Integer,Integer,Integer> {
+        protected void onPreExecute() {
+            asyncValue = 0;
+            progressBar.setProgress(asyncValue);
+        }
 
+        protected Integer doInBackground(Integer ... values){
+            while(isCancelled() == false){
+                asyncValue++;
+                if(asyncValue>=100){
+                    break;
+                }else{
+                    publishProgress(asyncValue);
+                }
 
+                try{
+                    Thread.sleep(1000);
+                }catch (InterruptedException e){}
+            }
+            return asyncValue;
+        }
+        protected void onProgressUpdate(Integer ... values){
+            progressBar.setProgress(values[0].intValue());
+        }
 
+        protected void onPostExecute(Integer result){
+            progressBar.setProgress(0);
+        }
+
+        protected void onCancelled(){
+            progressBar.setProgress(0);
+        }
+    }
 }
